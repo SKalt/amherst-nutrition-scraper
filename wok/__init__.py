@@ -1,27 +1,37 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar  5 16:21:17 2016
+
+@author: steven
+"""
+
 '''
-The Wok library is used to navigate and download menus from
-UW-Madison's dining menu pages (dining.housing.wisc.edu).
+The Wok2 library is used to navigate and download menus from
+Amherst College's NetNutrition dining menu pages.
 '''
 import json
 import urllib.request
 import urllib.parse
 import re
 import bs4
+#%%
 
-
-COOKIE = 'afmokubrljrurynkobboechd'
-
+COOKIE = 'gt5c1hn12t2kequxfv2i0qtm'# ASP.net session id
 
 class Wok():
 
-    url = 'http://dining.housing.wisc.edu/NetNutrition/1'
+    url = 'https://acnutrition.amherst.edu/NetNutrition/1'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
 
     def __init__(self):
         self.locations = []
-
+        # these are actually the stations! Only one real location, Val.
     def fetch_locations(self):
-        r = urllib.request.Request(self.url, None, {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, None, {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
+            ' ASP.NET_SessionId=' + COOKIE
+        })
         page = bs4.BeautifulSoup(urllib.request.urlopen(r))
         locations = page.select('.cbo_nn_sideUnitCell a')
 
@@ -54,7 +64,8 @@ class Wok():
 
 class Location():
 
-    url = 'http://dining.housing.wisc.edu/NetNutrition/1/Unit/SelectUnitFromSideBar'
+    url = 'https://acnutrition.amherst.edu/NetNutrition/1/Unit/' + \
+        'SelectUnitFromSideBar'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
 
     def __init__(self, lid, name):
@@ -65,7 +76,11 @@ class Location():
 
     def fetch_stations(self):
         postdata = urllib.parse.urlencode({'unitOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;'+\
+                ' ASP.NET_SessionId=' + COOKIE
+            })
         dlpage = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in dlpage['panels']:
             if panel['id'] == 'childUnitsPanel':
@@ -115,7 +130,8 @@ class Location():
 
 class Station():
 
-    url = 'http://dining.housing.wisc.edu/NetNutrition/1/Unit/SelectUnitFromChildUnitsList'
+    url = 'https://acnutrition.amherst.edu/NetNutrition/1/Unit/' + \
+    'SelectUnitFromChildUnitsList'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
 
     def __init__(self, sid, name, dontfetch=False):
@@ -135,7 +151,10 @@ class Station():
             return
 
         postdata = urllib.parse.urlencode({'unitOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
+        ' ASP.NET_SessionId=' + COOKIE})
         page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in page['panels']:
             if panel['id'] == 'menuPanel':
@@ -146,7 +165,9 @@ class Station():
         for menu in menus:
             datetext = menu.select('tr td')[0].get_text()
             for timeofday in menu.select('.cbo_nn_menuLink'):
-                mid = int(re.match(self.re_getid, timeofday.get('onclick')).group('id'))
+                mid = int(
+                    re.match(self.re_getid, timeofday.get('onclick')
+                ).group('id'))
                 self.menus.append(Menu(mid, datetext, timeofday.get_text()))
 
     def get_menu(self, menuid):
@@ -166,7 +187,7 @@ class Station():
 
 class Menu():
 
-    url = 'http://dining.housing.wisc.edu/NetNutrition/1/Menu/SelectMenu'
+    url = 'https://acnutrition.amherst.edu/NetNutrition/1/Menu/SelectMenu'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+\d+[\D+]')
 
     def __init__(self, mid, datetext, timeofday):
@@ -178,21 +199,25 @@ class Menu():
 
     def fetch_menu(self):
         postdata = urllib.parse.urlencode({'menuOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
+        ' ASP.NET_SessionId=' + COOKIE})
         page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in page['panels']:
             if panel['id'] == 'itemPanel':
                 page = bs4.BeautifulSoup(panel['html'])
                 break
 
-        items = page.select('.cbo_nn_itemPrimaryRow') + page.select('.cbo_nn_itemAlternateRow')
+        items = page.select('.cbo_nn_itemPrimaryRow') + \
+            page.select('.cbo_nn_itemAlternateRow')
         for item in items:
             subsel = item.select('.cbo_nn_itemHover')[0]
             name = subsel.get_text()
             iid = int(re.match(self.re_getid, subsel.get('onmouseover')).group('id'))
-            price = item.select('td')[-1].get_text()
             serving = item.select('td')[2].get_text()
-            self.items.append(Item(iid, name, serving, price))
+            stuff = [i.get_text() for i in item.select('td')]
+            self.items.append(Item(iid, name, serving, stuff))
 
     fetch_items = fetch_menu  # interface consistency
 
@@ -201,12 +226,11 @@ class Menu():
 
 
 class Item():
-    def __init__(self, iid, name, servingsize, price):
+    def __init__(self, iid, name, servingsize, stuff):
         self.id = iid
         self.name = name
         self.servingsize = servingsize
-        self.price = price
+        self.stuff = stuff
 
     def __repr__(self):
-        return '<Item %i: %s: %s: %s>' % (self.id, self.name, self.servingsize,
-                                          self.price)
+        return '<Item {} {} {}>'.format(self.id, self.name, self.servingsize)
