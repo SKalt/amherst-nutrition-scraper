@@ -14,6 +14,7 @@ import urllib.request
 import urllib.parse
 import re
 import bs4
+import requests
 #%%
 
 COOKIE = 'gt5c1hn12t2kequxfv2i0qtm'# ASP.net session id
@@ -231,6 +232,24 @@ class Item():
         self.name = name
         self.servingsize = servingsize
         self.stuff = stuff
+        
+        def fetch_nutrition(self):
+            r = requests.get('https://acnutrition.amherst.edu/NetNutrition/' +\
+                    '1/NutritionDetail/ShowItemNutritionLabel',
+            params={'detailOid': self.id},
+            headers={'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;'+\
+                        ' ASP.NET_SessionId=' + COOKIE}
+                        )
+            page = bs4.BeautifulSoup(r.text)
+            nutrition = []
+            for i in page.find_all('table')[1:]:
+                if '%' not in i.text:
+                    if "Calories" not in i.text:
+                        if ':' in i.text:
+                            nutrition.append(i.text.replace(u'\xa0', u' ').strip())
+            nutrition = {i.split(':')[0].strip():i.split(':')[1]}
+            nutrition["calories"] = int(page.find("span").text)
+            self.nutrition = nutrition
 
     def __repr__(self):
         return '<Item {} {} {}>'.format(self.id, self.name, self.servingsize)

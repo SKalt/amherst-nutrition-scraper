@@ -3,13 +3,13 @@ from distutils.core import setup
 
 
 setup(
-    name='Wok',
-    author='Austin Hartzheim',
+    name='acnutrition',
+    author='Austin Hartzheim, revised by Steven Kalt',
 
     version='1.2.1',
     packages=['wok'],
     license='GNU GPL v3',
-    description='Download menus from UW-Madison\'s NetNutrition website.',
+    description='Download menus from Amherst College\'s NetNutrition website.',
     long_description=open('README.md').read(),
     url='austinhartzheim.me/projects/wok/'
 )

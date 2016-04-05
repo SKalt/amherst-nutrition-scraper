@@ -1,6 +1,6 @@
-# Wok Readme
+# acnutrition Readme
 
-Wok is a Python module that can be used to download menu data from UW-Madison's NetNutrition website. It has the ability to download most of the information, including the list of dining locations, the different stations at each location, the different schedules at those stations (breakfast/lunch/dinner/late night offerings), and finally the actual menu items.
+Wok is a Python module that can be used to download menu data from Amherst College's NetNutrition website. It has the ability to download most of the information, including the list of dining locations, the different stations at each location, the different schedules at those stations (breakfast/lunch/dinner/late night offerings), and finally the actual menu items.
 
 ## Usage Example
 
@@ -12,8 +12,8 @@ Wok is a Python module that can be used to download menu data from UW-Madison's 
 
 import wok
 
-LOCATION_ID = 1  # The ID for Gordon's
-STATION_ID = 5  # The ID for the 1849 station
+LOCATION_ID = 1  # The ID for Val
+STATION_ID = 5  # The ID for ***
 
 w = wok.Wok()
 
