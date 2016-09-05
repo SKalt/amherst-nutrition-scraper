@@ -4,9 +4,16 @@ Created on Sat Mar  5 16:40:43 2016
 
 @author: steven
 """
-
+import os
+#os.chdir('./amherst-nutrition-scraper')
 import wok2
 w = wok2.Wok()
+#%%
+w.fetch_locations()
+w.locations[1].fetch_stations()
+#%%
+w.locations[1].fetch_menus()
+#%%
 w.fetch_recursively()
 #w.locations[0].stations[0].menus[0].fetch_test()
 #%%

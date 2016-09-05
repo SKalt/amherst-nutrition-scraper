@@ -1,14 +1,11 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Sat Mar  5 16:21:17 2016
-
-@author: steven
-"""
-
-'''
 The Wok2 library is used to navigate and download menus from
 Amherst College's NetNutrition dining menu pages.
-'''
+@author: steven
+"""
 import json
 import urllib.request
 import urllib.parse
@@ -17,35 +14,46 @@ import bs4
 import requests
 from collections import OrderedDict
 #%%
-
-COOKIE = 'nws43xshrrw2jz2rhr2vyjmf'# ASP.net session id
+def get_cookie():
+    url = 'https://acnutrition.amherst.edu/NetNutrition/1'
+    session = requests.Session()
+    session.get(url)
+    return session.cookies.get_dict()['ASP.NET_SessionId']
+    
+COOKIE = get_cookie()
+DATA = {}
+DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
+DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
 
 class Wok():
-
     url = 'https://acnutrition.amherst.edu/NetNutrition/1'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
 
     def __init__(self):
-        self.locations = []
+        self.sidebar = []
         # these are actually the stations! Only one real location, Val.
-    def fetch_locations(self):
-        r = urllib.request.Request(self.url, None, {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
-            ' ASP.NET_SessionId=' + COOKIE
-        })
-        page = bs4.BeautifulSoup(urllib.request.urlopen(r))
+        # sidebar?
+    def fetch_sidebar(self):
+#        data = {}
+#        data['Content-Type'] = 'application/x-www-form-urlencoded;'
+#        data['Content-Type'] += 'charset=UTF-8'
+#        data['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
+#        data['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
+        req = urllib.request.Request(self.url, None, DATA)
+        page = bs4.BeautifulSoup(urllib.request.urlopen(req))
         locations = page.select('.cbo_nn_sideUnitCell a')
 
-        self.locations = []  # Clear out and repopulate the list
+        self.sidebar = []  # Clear out and repopulate the list
         for loc in locations:
             name = loc.get_text()
             lid = int(re.match(self.re_getid, loc.get('onclick')).group('id'))
-            self.locations.append(Location(lid, name))
+            self.sidebar.append(Location(lid, name))
 
     def fetch_recursively(self):
-        self.fetch_locations()
-        for loc in self.locations:
+        #TODO: revise
+        self.fetch_sidebar()
+        for loc in self.sidebar:
             loc.fetch_stations()
             for stat in loc.stations:
                 stat.fetch_menus()
@@ -55,7 +63,7 @@ class Wok():
                         item.fetch_nutrition()
 
     def get_location(self, loc):
-        if not self.locations:
+        if not self.sidebar:
             raise IndexError('You have not fetched any locations')
         if isinstance(loc, int):
             for location in self.locations:
@@ -75,16 +83,13 @@ class Location():
     def __init__(self, lid, name):
         self.id = lid
         self.name = name
+#        self.cookie = cookie
 
         self.stations = []
 
     def fetch_stations(self):
         postdata = urllib.parse.urlencode({'unitOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;'+\
-                ' ASP.NET_SessionId=' + COOKIE
-            })
+        r = urllib.request.Request(self.url, postdata, DATA)
         dlpage = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in dlpage['panels']:
             if panel['id'] == 'childUnitsPanel':
@@ -111,7 +116,7 @@ class Location():
                     page = bs4.BeautifulSoup(panel['html'])
                     break
 
-            station = Station(0, 'Default', dontfetch=True)
+            station = Station(0, 'Default', dontfetch=False)
             menus = page.select('.cbo_nn_menuCell > table')
             for menu in menus:
                 datetext = menu.select('tr td')[0].get_text()
@@ -159,11 +164,9 @@ class Station():
             return
 
         postdata = urllib.parse.urlencode({'unitOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
-        ' ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, DATA)
         page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
+        print(page)
         for panel in page['panels']:
             if panel['id'] == 'menuPanel':
                 page = bs4.BeautifulSoup(panel['html'])
@@ -215,10 +218,7 @@ class Menu():
 
             return
         postdata = urllib.parse.urlencode({'menuOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
-        ' ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, DATA)
         page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in page['panels']:
             if panel['id'] == 'itemPanel':
@@ -240,10 +240,7 @@ class Menu():
     
     def fetch_test(self):
         postdata = urllib.parse.urlencode({'menuOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;' + \
-        ' ASP.NET_SessionId=' + COOKIE})
+        r = urllib.request.Request(self.url, postdata, DATA)
         page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
         for panel in page['panels']:
             if panel['id'] == 'itemPanel':
@@ -270,21 +267,23 @@ class Item():
         self.servingsize = servingsize
         
     def fetch_nutrition(self):
-        r = requests.get('https://acnutrition.amherst.edu/NetNutrition/' + \
-                    '1/NutritionDetail/ShowItemNutritionLabel',
-            params={'detailOid': self.id},
-            headers={'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=;'+\
-                        ' ASP.NET_SessionId=' + COOKIE}
-                        )
-        page = bs4.BeautifulSoup(r.text)
-        nutrition = []
-        for i in page.find_all('table'):
-            if '%' not in i.text:
-                if ':' in i.text:
-                    nutrition.append(i.text.replace(u'\xa0', u' ').strip())
-        nutrition = {i.split(':')[0].strip():i.split(':')[1] for i in nutrition}
-        self.nutrition = nutrition
-        
+        try:
+            r = requests.get('https://acnutrition.amherst.edu/NetNutrition/' + \
+                        '1/NutritionDetail/ShowItemNutritionLabel',
+                params={'detailOid': self.id},
+                headers=DATA
+                            )
+            page = bs4.BeautifulSoup(r.text)
+            nutrition = []
+            for i in page.find_all('table'):
+                if '%' not in i.text:
+                    if ':' in i.text:
+                        nutrition.append(i.text.replace(u'\xa0', u' ').strip())
+            nutrition = {i.split(':')[0].strip():i.split(':')[1] for i in nutrition}
+            self.nutrition = nutrition
+        except:
+            print(self.id)
+            self.nutrition = {}
         
         
 
