@@ -20,12 +20,11 @@ def get_cookie():
     session.get(url)
     return session.cookies.get_dict()['ASP.NET_SessionId']
     
-COOKIE = get_cookie()
-DATA = {}
-DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
-DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
-DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
-
+def get_unit(url, unit_id):
+    postdata = urllib.parse.urlencode({'unitOid': unit_id}).encode('utf8')
+    r = urllib.request.Request(url, postdata, DATA)
+    return json.loads(urllib.request.urlopen(r).read().decode('utf8'))
+    
 class Wok():
     url = 'https://acnutrition.amherst.edu/NetNutrition/1'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
@@ -35,11 +34,6 @@ class Wok():
         # these are actually the stations! Only one real location, Val.
         # sidebar?
     def fetch_sidebar(self):
-#        data = {}
-#        data['Content-Type'] = 'application/x-www-form-urlencoded;'
-#        data['Content-Type'] += 'charset=UTF-8'
-#        data['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
-#        data['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
         req = urllib.request.Request(self.url, None, DATA)
         page = bs4.BeautifulSoup(urllib.request.urlopen(req))
         locations = page.select('.cbo_nn_sideUnitCell a')
@@ -75,7 +69,6 @@ class Wok():
 
 
 class Location():
-
     url = 'https://acnutrition.amherst.edu/NetNutrition/1/Unit/' + \
         'SelectUnitFromSideBar'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
@@ -83,14 +76,10 @@ class Location():
     def __init__(self, lid, name):
         self.id = lid
         self.name = name
-#        self.cookie = cookie
-
         self.stations = []
 
     def fetch_stations(self):
-        postdata = urllib.parse.urlencode({'unitOid': self.id}).encode('utf8')
-        r = urllib.request.Request(self.url, postdata, DATA)
-        dlpage = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
+        dlpage = get_unit(self.url, self.id)
         for panel in dlpage['panels']:
             if panel['id'] == 'childUnitsPanel':
                 page = bs4.BeautifulSoup(panel['html'])
@@ -284,8 +273,14 @@ class Item():
         except:
             print(self.id)
             self.nutrition = {}
-        
-        
-
+            
     def __repr__(self):
         return '<Item {} {} {}>'.format(self.id, self.name, self.servingsize)
+#%%
+if __name__ == '__main__':
+    COOKIE = get_cookie()
+    DATA = {}
+    DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+    DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
+    DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
+    

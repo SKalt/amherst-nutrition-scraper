@@ -9,10 +9,11 @@ import os
 import wok2
 w = wok2.Wok()
 #%%
-w.fetch_locations()
-w.locations[1].fetch_stations()
+w.fetch_sidebar()
 #%%
-w.locations[1].fetch_menus()
+w.sidebar[0].fetch_stations()
+#%%
+w.sidebar[0].stations[0].fetch_menus()
 #%%
 w.fetch_recursively()
 #w.locations[0].stations[0].menus[0].fetch_test()
@@ -49,7 +50,7 @@ r.text
 #%%
 r = requests.get('https://acnutrition.amherst.edu/NetNutrition/1/NutritionDetail/ShowItemNutritionLabel',
              params={'detailOid': 351537},
-            headers=headers)
+            headers=tmp)
 x = bs4.BeautifulSoup(r.text)
 x.text
 #%%
@@ -92,3 +93,11 @@ for menu in station.menus:
     print('Menu: %s: %s' % (menu.datetext, menu.timeofday))
     for item in menu.items:
         print('  {0:50}{1:20}{2:7}'.format(item.name, item.servingsize, item.price))
+#%%
+DATA = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+ 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=2o2ewwqjcdp2l5gfczf5exrx'}
+postdata = urllib.parse.urlencode({'unitOid': 19463}).encode('utf8')
+r = urllib.request.Request('https://acnutrition.amherst.edu/NetNutrition/1/menu',
+                           postdata, DATA)
+page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
+#%%
