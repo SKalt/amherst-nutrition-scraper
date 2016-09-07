@@ -13,6 +13,8 @@ import re
 import bs4
 import requests
 #%%
+#TODO: add caching in some form of database
+
 def get_cookie():
     """Returns a cookie for a sesssion in NetNutrition"""
     url = 'https://acnutrition.amherst.edu/NetNutrition/1'
@@ -73,11 +75,6 @@ class MainPage(object):
             raise IndexError('Location ID not found.')
         else:
             raise TypeError('An integer Location ID must be passed.')
-
-#class unit(Wok):
-#    def __init__(self, unit_id, name):
-#        self.id = unit_id
-#        self.name = name
 
 class MenuSchedule(object):
     """
