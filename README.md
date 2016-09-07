@@ -1,39 +1,45 @@
 # acnutrition Readme
 
-Wok is a Python module that can be used to download menu data from Amherst College's NetNutrition website. It has the ability to download most of the information, including the list of dining locations, the different stations at each location, the different schedules at those stations (breakfast/lunch/dinner/late night offerings), and finally the actual menu items.
+amherst-nutrition-scraper is a Python module that can be used to download menu data from Amherst College's NetNutrition website. It has the ability to download most of the information, including the list of dining locations, the different stations at each location, the different schedules at those stations (breakfast/lunch/dinner/late night offerings), and finally the actual menu items.
 
 ## Usage Example
 
 ```python
 #! /usr/bin/env python3
 
-# This example is based on the more developed menu client:
-#   https://github.com/austinhartzheim/menu
+import amherst-nutrition-scraper
 
-import wok
+# get a valid cookie
+COOKIE = get_cookie()
+print(COOKIE)
 
-LOCATION_ID = 1  # The ID for Val
-STATION_ID = 5  # The ID for ***
+# create a data header for future requests
+DATA = {}
+DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
+DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
 
-w = wok.Wok()
+# create an object representing the main page of the NetNutrition site
+MAIN = MainPage()
+# get MenuSchedule objects representing each schedule of menus in the sidebar. In the
+# case of default stations such as 'Beverages', these menu schedules contain default Menu
+# objects
+MAIN.fetch_sidebar()
 
-# Fetch the list of available locations on campus
-w.fetch_locations()
+# Fetch Val
+MAIN.sidebar[0].fetch_menus()
 
-# Fetch the stations at this location
-loc = w.get_location(LOCATION_ID)
-loc.fetch_stations()
-station = loc.get_station(STATION_ID)
+#Fetch breakfast
+MAIN.sidebar[0].menus[0].fetch_items()
 
-# Fetch the available menus at the station (which can vary by meal)
-station.fetch_menus()
+# Fetch the first item on the menu
+MAIN.sidebar[0].menus[0].items[0].fetch_nutrition()
 
-# Fetch all menus:
-for menu in station.menus:
-    menu.fetch_items()
-
-for menu in station.menus:
-    print('Menu: %s: %s' % (menu.datetext, menu.timeofday))
-    for item in menu.items:
-    	print('  {0:50}{1:20}{2:7}'.format(item.name, item.servingsize, item.price))
+for location in MAIN.sidebar:
+  print(location)
+for menu in MAIN.sidebar[0]:
+  print(menu)
+for item in MAIN.sidebar[0].menus[0].items:
+  print(item)
+print(MAIN.sidebar[0].menus[0].items[0].nutrition)
 ```
