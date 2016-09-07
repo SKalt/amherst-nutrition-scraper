@@ -24,7 +24,7 @@ def get_unit(url, unit_id):
     postdata = urllib.parse.urlencode({'unitOid': unit_id}).encode('utf8')
     r = urllib.request.Request(url, postdata, DATA)
     return json.loads(urllib.request.urlopen(r).read().decode('utf8'))
-    
+#%%  
 class Wok():
     url = 'https://acnutrition.amherst.edu/NetNutrition/1'
     re_getid = re.compile('[\D]+(?P<id>\d+)[\D]+')
@@ -283,4 +283,5 @@ if __name__ == '__main__':
     DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
     DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
     DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
-    
+    MAIN = Wok()
+    MAIN.fetch_locations()

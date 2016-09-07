@@ -5,9 +5,17 @@ Created on Sat Mar  5 16:40:43 2016
 @author: steven
 """
 import os
-#os.chdir('./amherst-nutrition-scraper')
+os.chdir('./amherst-nutrition-scraper')
 import wok2
 w = wok2.Wok()
+#%%
+w = splash_page()
+#%%
+COOKIE = get_cookie()
+DATA = {}
+DATA['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+DATA['Cookie'] = 'CBORD.netnutrition2=NNexternalID=1&Layout=; '
+DATA['Cookie'] += 'ASP.NET_SessionId=' + COOKIE
 #%%
 w.fetch_sidebar()
 #%%
@@ -94,10 +102,18 @@ for menu in station.menus:
     for item in menu.items:
         print('  {0:50}{1:20}{2:7}'.format(item.name, item.servingsize, item.price))
 #%%
-DATA = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
- 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=2o2ewwqjcdp2l5gfczf5exrx'}
-postdata = urllib.parse.urlencode({'unitOid': 19463}).encode('utf8')
+#DATA = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+# 'Cookie': 'CBORD.netnutrition2=NNexternalID=1&Layout=; ASP.NET_SessionId=2o2ewwqjcdp2l5gfczf5exrx'}
+postdata = urllib.parse.urlencode({'menuOid': 19463}).encode('utf8')
 r = urllib.request.Request('https://acnutrition.amherst.edu/NetNutrition/1/menu',
                            postdata, DATA)
 page = json.loads(urllib.request.urlopen(r).read().decode('utf8'))
+#%%
+r = requests.get('https://acnutrition.amherst.edu/NetNutrition/' + \
+            '1/NutritionDetail/ShowItemNutritionLabel',
+    params={'detailOid': 387860},
+    headers=DATA
+                )
+page = bs4.BeautifulSoup(r.text)
+nutrition = []
 #%%
